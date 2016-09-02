@@ -1,0 +1,55 @@
+module sample-plugin {
+
+    yang-version 1;
+    namespace "urn:opendaylight:params:xml:ns:yang:sample-plugin";
+    prefix "sample-plugin";
+
+    description
+        "This YANG module defines the generic configuration and
+        operational data for sample-plugin in VPP";
+
+    revision "2016-09-18" {
+        description "Initial revision of sample-plugin model";
+    }
+
+    container sample-plugin {
+        uses sample-plugin-params;
+        description "Configuration data of sample-plugin in Honeycomb";
+
+        // READ
+        // curl -u admin:admin http://localhost:8181/restconf/config/sample-plugin:sample-plugin
+
+        // WRITE
+        // curl http://localhost:8181/restconf/operational/sample-plugin:sample-plugin
+
+    }
+
+    container sample-plugin-state {
+        config false;
+        uses sample-plugin-params;
+        description "Operational data of sample-plugin persisted in VPP";
+
+        // READ
+        // curl -u admin:admin  http://localhost:8181/restconf/operational/sample-plugin:sample-plugin-state
+    }
+
+    grouping sample-plugin-params {
+        list element {
+
+            key id;
+            leaf id {
+                type uint32;
+            }
+
+            leaf description {
+                type string;
+            }
+        }
+    }
+
+    notification sample-notification {
+        leaf content {
+            type string;
+        }
+    }
+}
