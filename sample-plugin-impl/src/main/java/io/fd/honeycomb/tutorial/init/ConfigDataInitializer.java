@@ -44,7 +44,7 @@ public final class ConfigDataInitializer extends AbstractDataTreeConverter<Sampl
     public SamplePlugin convert(final SamplePluginState operationalData) {
         // Transfer all the operational data into configuration
         return new SamplePluginBuilder()
-                .setElement(operationalData.getElement())
+                .setVxlans(operationalData.getVxlans())
                 .build();
     }
 }

@@ -4,6 +4,8 @@ module sample-plugin {
     namespace "urn:opendaylight:params:xml:ns:yang:sample-plugin";
     prefix "sample-plugin";
 
+    import ietf-inet-types { prefix "inet"; }
+
     description
         "This YANG module defines the generic configuration and
         operational data for sample-plugin in VPP";
@@ -34,15 +36,20 @@ module sample-plugin {
     }
 
     grouping sample-plugin-params {
-        list element {
+        container vxlans {
+            list vxlan-tunnel {
 
-            key id;
-            leaf id {
-                type uint32;
-            }
+                key id;
+                leaf id {
+                    type string;
+                }
 
-            leaf description {
-                type string;
+                leaf src {
+                  type inet:ip-address;
+                }
+                leaf dst {
+                  type inet:ip-address;
+                }
             }
         }
     }

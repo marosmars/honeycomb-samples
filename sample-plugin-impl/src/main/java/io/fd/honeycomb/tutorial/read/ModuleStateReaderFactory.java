@@ -16,19 +16,19 @@
 
 package io.fd.honeycomb.tutorial.read;
 
-import static io.fd.honeycomb.tutorial.ModuleConfiguration.ELEMENT_SERVICE_NAME;
-
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import io.fd.honeycomb.tutorial.CrudService;
 import io.fd.honeycomb.translate.impl.read.GenericListReader;
 import io.fd.honeycomb.translate.read.ReaderFactory;
 import io.fd.honeycomb.translate.read.registry.ModifiableReaderRegistryBuilder;
+import io.fd.honeycomb.translate.v3po.util.NamingContext;
 import javax.annotation.Nonnull;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.SamplePluginState;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.SamplePluginStateBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.sample.plugin.params.Element;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.sample.plugin.params.Vxlans;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.sample.plugin.params.VxlansBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.sample.plugin.params.vxlans.VxlanTunnel;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
+import org.openvpp.jvpp.core.future.FutureJVppCore;
 
 /**
  * Factory producing readers for sample-plugin plugin's data.
@@ -39,25 +39,32 @@ public final class ModuleStateReaderFactory implements ReaderFactory {
             InstanceIdentifier.create(SamplePluginState.class);
 
     /**
-     * Injected crud service to be passed to customizers instantiated in this factory.
+     * Injected vxlan naming context shared with writer, provided by this plugin
      */
     @Inject
-    @Named(ELEMENT_SERVICE_NAME)
-    private CrudService<Element> crudService;
+    private NamingContext vxlanNamingContext;
+    /**
+     * Injected jvpp core APIs, provided by Honeycomb's infrastructure
+     */
+    @Inject
+    private FutureJVppCore jvppCore;
 
     @Override
     public void init(@Nonnull final ModifiableReaderRegistryBuilder registry) {
-
         // register reader that only delegate read's to its children
         registry.addStructuralReader(ROOT_STATE_CONTAINER_ID, SamplePluginStateBuilder.class);
+        // register reader that only delegate read's to its children
+        registry.addStructuralReader(ROOT_STATE_CONTAINER_ID.child(Vxlans.class), VxlansBuilder.class);
 
         // just adds reader to the structure
         // use addAfter/addBefore if you want to add specific order to readers on the same level of tree
         // use subtreeAdd if you want to handle multiple nodes in single customizer/subtreeAddAfter/subtreeAddBefore if you also want to add order
         // be aware that instance identifier passes to subtreeAdd/subtreeAddAfter/subtreeAddBefore should define subtree,
         // therefore it should be relative from handled node down - InstanceIdentifier.create(HandledNode), not parent.child(HandledNode.class)
-        registry.add(
-                new GenericListReader<>(ROOT_STATE_CONTAINER_ID.child(Element.class),
-                        new ElementStateCustomizer(crudService)));
+        registry.add(new GenericListReader<>(
+                // What part of subtree this reader handles is identified by an InstanceIdentifier
+                ROOT_STATE_CONTAINER_ID.child(Vxlans.class).child(VxlanTunnel.class),
+                // Customizer (the actual translation code to do the heavy lifting)
+                new VxlanReadCustomizer(jvppCore, vxlanNamingContext)));
     }
 }

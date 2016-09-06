@@ -16,18 +16,17 @@
 
 package io.fd.honeycomb.tutorial.write;
 
-import static io.fd.honeycomb.tutorial.ModuleConfiguration.ELEMENT_SERVICE_NAME;
-
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import io.fd.honeycomb.tutorial.CrudService;
 import io.fd.honeycomb.translate.impl.write.GenericWriter;
+import io.fd.honeycomb.translate.v3po.util.NamingContext;
 import io.fd.honeycomb.translate.write.WriterFactory;
 import io.fd.honeycomb.translate.write.registry.ModifiableWriterRegistryBuilder;
 import javax.annotation.Nonnull;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.SamplePlugin;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.sample.plugin.params.Element;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.sample.plugin.params.Vxlans;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.sample.plugin.rev160918.sample.plugin.params.vxlans.VxlanTunnel;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
+import org.openvpp.jvpp.core.future.FutureJVppCore;
 
 /**
  * Factory producing writers for sample-plugin plugin's data.
@@ -37,17 +36,25 @@ public final class ModuleWriterFactory implements WriterFactory {
     private static final InstanceIdentifier<SamplePlugin> ROOT_CONTAINER_ID = InstanceIdentifier.create(SamplePlugin.class);
 
     /**
-     * Injected crud service to be passed to customizers instantiated in this factory.
+     * Injected vxlan naming context shared with writer, provided by this plugin
      */
     @Inject
-    @Named(ELEMENT_SERVICE_NAME)
-    private CrudService<Element> crudService;
+    private NamingContext vxlanNamingContext;
+    /**
+     * Injected jvpp core APIs, provided by Honeycomb's infrastructure
+     */
+    @Inject
+    private FutureJVppCore jvppCore;
 
     @Override
     public void init(@Nonnull final ModifiableWriterRegistryBuilder registry) {
+        // Unlike ReaderFactory, there's no need to add structural writers, just the writers that actually do something
 
-        //adds writer for child node
-        //no need to add writers for empty nodes
-        registry.add(new GenericWriter<>(ROOT_CONTAINER_ID.child(Element.class), new ElementCustomizer(crudService)));
+        // register writer for vxlan tunnel
+        registry.add(new GenericWriter<>(
+                // What part of subtree this writer handles is identified by an InstanceIdentifier
+                ROOT_CONTAINER_ID.child(Vxlans.class).child(VxlanTunnel.class),
+                // Customizer (the actual translation code to do the heavy lifting)
+                new VxlanWriteCustomizer(jvppCore, vxlanNamingContext)));
     }
 }
