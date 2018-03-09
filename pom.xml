@@ -22,7 +22,7 @@
 
   <groupId>io.fd.honeycomb.tutorial</groupId>
   <artifactId>sample-plugin-aggregator</artifactId>
-  <version>1.16.9-SNAPSHOT</version>
+  <version>1.0-SNAPSHOT</version>
   <name>sample-plugin-aggregator</name>
   <packaging>pom</packaging>
   <modelVersion>4.0.0</modelVersion>
